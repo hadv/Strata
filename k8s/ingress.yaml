@@ -1,0 +1,32 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: strata-ingress
+  namespace: strata
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /api/accounts$1
+    nginx.ingress.kubernetes.io/use-regex: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: strata.local
+      http:
+        paths:
+          # POST to /api/accounts → Command Service
+          - path: /api/accounts
+            pathType: Prefix
+            backend:
+              service:
+                name: command-service
+                port:
+                  number: 8080
+          # GET from /api/accounts → Query Service
+          # Note: In practice, you'd use method-based routing via an API Gateway
+          # or separate path prefixes. For this demo, we use path-based routing:
+          - path: /api/query/accounts
+            pathType: Prefix
+            backend:
+              service:
+                name: query-service
+                port:
+                  number: 8081

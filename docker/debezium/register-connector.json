@@ -1,0 +1,24 @@
+{
+  "name": "strata-postgres-connector",
+  "config": {
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "database.hostname": "postgres-write",
+    "database.port": "5432",
+    "database.user": "strata",
+    "database.password": "strata_secret",
+    "database.dbname": "strata_events",
+    "topic.prefix": "postgres",
+    "table.include.list": "public.events",
+    "plugin.name": "pgoutput",
+    "slot.name": "strata_slot",
+    "publication.name": "strata_publication",
+    "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "key.converter.schemas.enable": "false",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter.schemas.enable": "false",
+    "snapshot.mode": "initial",
+    "tombstones.on.delete": "false",
+    "decimal.handling.mode": "string",
+    "time.precision.mode": "connect"
+  }
+}

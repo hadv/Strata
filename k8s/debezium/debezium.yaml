@@ -1,0 +1,146 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: debezium-connector-config
+  namespace: strata
+data:
+  register-connector.json: |
+    {
+      "name": "strata-postgres-connector",
+      "config": {
+        "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+        "database.hostname": "postgres",
+        "database.port": "5432",
+        "database.user": "strata",
+        "database.password": "strata_secret",
+        "database.dbname": "strata_events",
+        "topic.prefix": "postgres",
+        "table.include.list": "public.events",
+        "plugin.name": "pgoutput",
+        "slot.name": "strata_slot",
+        "publication.name": "strata_publication",
+        "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+        "key.converter.schemas.enable": "false",
+        "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+        "value.converter.schemas.enable": "false",
+        "snapshot.mode": "initial",
+        "tombstones.on.delete": "false",
+        "decimal.handling.mode": "string",
+        "time.precision.mode": "connect"
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: debezium-connect
+  namespace: strata
+  labels:
+    app: debezium-connect
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: debezium-connect
+  template:
+    metadata:
+      labels:
+        app: debezium-connect
+    spec:
+      containers:
+        - name: connect
+          image: debezium/connect:2.5
+          ports:
+            - containerPort: 8083
+          env:
+            - name: GROUP_ID
+              value: "strata-connect-cluster"
+            - name: CONFIG_STORAGE_TOPIC
+              value: "_connect-configs"
+            - name: OFFSET_STORAGE_TOPIC
+              value: "_connect-offsets"
+            - name: STATUS_STORAGE_TOPIC
+              value: "_connect-status"
+            - name: BOOTSTRAP_SERVERS
+              value: "kafka-0.kafka.strata.svc.cluster.local:9092"
+            - name: KEY_CONVERTER
+              value: "org.apache.kafka.connect.json.JsonConverter"
+            - name: VALUE_CONVERTER
+              value: "org.apache.kafka.connect.json.JsonConverter"
+            - name: KEY_CONVERTER_SCHEMAS_ENABLE
+              value: "false"
+            - name: VALUE_CONVERTER_SCHEMAS_ENABLE
+              value: "false"
+          volumeMounts:
+            - name: connector-config
+              mountPath: /connector-config
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8083
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8083
+            initialDelaySeconds: 60
+            periodSeconds: 15
+      volumes:
+        - name: connector-config
+          configMap:
+            name: debezium-connector-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: debezium-connect
+  namespace: strata
+  labels:
+    app: debezium-connect
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8083
+      targetPort: 8083
+  selector:
+    app: debezium-connect
+---
+# Job to register the connector after Debezium is ready
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: register-debezium-connector
+  namespace: strata
+spec:
+  backoffLimit: 10
+  template:
+    spec:
+      containers:
+        - name: register
+          image: curlimages/curl:latest
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for Kafka Connect to be ready..."
+              until curl -sf http://debezium-connect:8083/; do
+                echo "Connect not ready, retrying in 5s..."
+                sleep 5
+              done
+              echo "Registering connector..."
+              curl -i -X POST \
+                -H "Accept:application/json" \
+                -H "Content-Type:application/json" \
+                http://debezium-connect:8083/connectors/ \
+                -d @/connector-config/register-connector.json
+              echo ""
+              echo "Connector registered successfully!"
+          volumeMounts:
+            - name: connector-config
+              mountPath: /connector-config
+      volumes:
+        - name: connector-config
+          configMap:
+            name: debezium-connector-config
+      restartPolicy: OnFailure

@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: command-config
+  namespace: strata
+data:
+  POSTGRES_HOST: postgres
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: strata_events
+  POSTGRES_USER: strata
+  POSTGRES_PASSWORD: strata_secret
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: command-service
+  namespace: strata
+  labels:
+    app: command-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: command-service
+  template:
+    metadata:
+      labels:
+        app: command-service
+    spec:
+      containers:
+        - name: command
+          image: strata-command:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: command-config
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: command-service
+  namespace: strata
+  labels:
+    app: command-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    app: command-service
