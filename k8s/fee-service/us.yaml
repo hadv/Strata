@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fee-service-us
+  namespace: strata
+  labels:
+    app: fee-service-us
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fee-service-us
+  template:
+    metadata:
+      labels:
+        app: fee-service-us
+    spec:
+      containers:
+        - name: fee-service
+          image: strata-fee-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8090
+          env:
+            - name: COUNTRY
+              value: US
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fee-service-us
+  namespace: strata
+spec:
+  selector:
+    app: fee-service-us
+  ports:
+    - port: 8090
+      targetPort: 8090

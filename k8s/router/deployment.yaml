@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: router-service
+  namespace: strata
+  labels:
+    app: router
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: router
+  template:
+    metadata:
+      labels:
+        app: router
+    spec:
+      containers:
+        - name: router
+          image: strata-router:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8082
+          env:
+            - name: FEE_SERVICE_US_URL
+              value: http://fee-service-us:8090
+            - name: FEE_SERVICE_EU_URL
+              value: http://fee-service-eu:8090
+            - name: FEE_SERVICE_VN_URL
+              value: http://fee-service-vn:8090
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8082
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"

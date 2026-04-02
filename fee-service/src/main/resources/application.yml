@@ -1,0 +1,10 @@
+server:
+  port: 8090
+
+app:
+  country: ${COUNTRY:DEFAULT}
+
+logging:
+  level:
+    com.example.strata.fee: DEBUG
+    org.springframework.web: INFO

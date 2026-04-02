@@ -1,0 +1,22 @@
+server:
+  port: 8082
+
+camel:
+  springboot:
+    main-run-controller: true
+    name: strata-transfer-fee-router
+  servlet:
+    mapping:
+      context-path: /api/*
+
+router:
+  fee-service-urls:
+    US: ${FEE_SERVICE_US_URL:http://localhost:8091}
+    EU: ${FEE_SERVICE_EU_URL:http://localhost:8092}
+    VN: ${FEE_SERVICE_VN_URL:http://localhost:8093}
+  default-fee-service-url: ${DEFAULT_FEE_SERVICE_URL:http://localhost:8090}
+
+logging:
+  level:
+    com.example.strata.router: DEBUG
+    org.apache.camel: INFO

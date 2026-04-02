@@ -1,0 +1,59 @@
+# =============================================================================
+# Camel K Integration CRD — Transfer Fee Router
+# =============================================================================
+apiVersion: camel.apache.org/v1
+kind: Integration
+metadata:
+  name: strata-transfer-fee-router
+  namespace: strata
+spec:
+  sources:
+    - name: transfer-fee-router.yaml
+      language: yaml
+      content: |
+        - rest:
+            path: "/transfer"
+            post:
+              - path: "/calculate-fee"
+                to: "direct:calculate-fee"
+        - route:
+            id: transfer-fee-router
+            from:
+              uri: "direct:calculate-fee"
+              steps:
+                - log: "Calculating fee for amount ${body[amount]} in country ${body[country]}"
+                - set-property:
+                    name: amount
+                    simple: "${body[amount]}"
+                - set-header:
+                    name: country
+                    simple: "${body[country]}"
+                - choice:
+                    when:
+                      - simple: "${header.country} == 'US'"
+                        steps:
+                          - to-d: "{{router.fee-service-urls.US}}/api/fees/calculate"
+                      - simple: "${header.country} == 'EU'"
+                        steps:
+                          - to-d: "{{router.fee-service-urls.EU}}/api/fees/calculate"
+                      - simple: "${header.country} == 'VN'"
+                        steps:
+                          - to-d: "{{router.fee-service-urls.VN}}/api/fees/calculate"
+                    otherwise:
+                      steps:
+                        - to-d: "{{router.default-fee-service-url}}/api/fees/calculate"
+                - script:
+                    language: "groovy"
+                    script: |
+                      def fee = body.fee as Double
+                      def amount = exchange.getProperty("amount") as Double
+                      body.totalCharged = amount + fee
+  configuration:
+    - type: property
+      value: router.fee-service-urls.US=http://fee-service-us:8090
+    - type: property
+      value: router.fee-service-urls.EU=http://fee-service-eu:8090
+    - type: property
+      value: router.fee-service-urls.VN=http://fee-service-vn:8090
+    - type: property
+      value: router.default-fee-service-url=http://fee-service-default:8090

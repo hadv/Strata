@@ -1,0 +1,60 @@
+# =============================================================================
+# Transfer Fee Router — Camel K YAML DSL
+# =============================================================================
+# Exposes a REST endpoint to calculate transaction fees by country.
+# Routes to country-specific microservices (US, EU, VN).
+#
+# Deploy: kamel run transfer-fee-router.camel.yaml \
+#           -p router.fee-service-urls.US=http://fee-service-us:8090 \
+#           -p router.fee-service-urls.EU=http://fee-service-eu:8090 \
+#           -p router.fee-service-urls.VN=http://fee-service-vn:8090
+# =============================================================================
+
+- rest:
+    path: "/transfer"
+    post:
+      - path: "/calculate-fee"
+        type: "com.example.strata.router.routes.FeeCalculationRequest" # Reusing DTO from JVM if available
+        to: "direct:calculate-fee"
+
+- route:
+    id: transfer-fee-router
+    from:
+      uri: "direct:calculate-fee"
+      steps:
+        - log: "Calculating fee for amount ${body[amount]} in country ${body[country]}"
+        
+        # Preserve amount
+        - set-property:
+            name: amount
+            simple: "${body[amount]}"
+            
+        - set-header:
+            name: country
+            simple: "${body[country]}"
+
+        # Content-based routing
+        - choice:
+            when:
+              - simple: "${header.country} == 'US'"
+                steps:
+                  - to-d: "{{router.fee-service-urls.US:http://fee-service-us:8090}}/api/fees/calculate"
+              - simple: "${header.country} == 'EU'"
+                steps:
+                  - to-d: "{{router.fee-service-urls.EU:http://fee-service-eu:8090}}/api/fees/calculate"
+              - simple: "${header.country} == 'VN'"
+                steps:
+                  - to-d: "{{router.fee-service-urls.VN:http://fee-service-vn:8090}}/api/fees/calculate"
+            otherwise:
+              steps:
+                - to-d: "{{router.default-fee-service-url:http://fee-service-default:8090}}/api/fees/calculate"
+
+        - log: "Fee calculation response: ${body}"
+        
+        # Final enrichment (total calculation)
+        - script:
+            language: "groovy"
+            script: |
+              def fee = body.fee as Double
+              def amount = exchange.getProperty("amount") as Double
+              body.totalCharged = amount + fee

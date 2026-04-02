@@ -57,23 +57,18 @@ services:
     image: bitnami/kafka:3.7
     container_name: strata-kafka
     environment:
-      # KRaft mode configuration
       KAFKA_CFG_NODE_ID: 1
       KAFKA_CFG_PROCESS_ROLES: broker,controller
       KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
       KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      # Listeners
       KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
       KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
       KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
       KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      # Cluster
       KAFKA_KRAFT_CLUSTER_ID: strata-kraft-cluster-001
       ALLOW_PLAINTEXT_LISTENER: "yes"
-      # Topic defaults
       KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKA_CFG_NUM_PARTITIONS: 3
-      KAFKA_CFG_DEFAULT_REPLICATION_FACTOR: 1
     ports:
       - "9094:9094"
     volumes:
@@ -95,9 +90,6 @@ services:
     container_name: strata-connect
     environment:
       GROUP_ID: strata-connect-cluster
-      CONFIG_STORAGE_TOPIC: _connect-configs
-      OFFSET_STORAGE_TOPIC: _connect-offsets
-      STATUS_STORAGE_TOPIC: _connect-status
       BOOTSTRAP_SERVERS: kafka:9092
       KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
       VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
@@ -168,7 +160,67 @@ services:
       - strata-net
 
   # ============================================================
-  # UTILITY: Kafka UI (optional — for monitoring topics)
+  # SMART ROUTING DEMO: Fee Services (Country Nodes)
+  # ============================================================
+  fee-service-us:
+    build:
+      context: ..
+      dockerfile: docker/fee-service.Dockerfile
+    container_name: fee-service-us
+    environment:
+      COUNTRY: US
+    ports:
+      - "8091:8090"
+    networks:
+      - strata-net
+
+  fee-service-eu:
+    build:
+      context: ..
+      dockerfile: docker/fee-service.Dockerfile
+    container_name: fee-service-eu
+    environment:
+      COUNTRY: EU
+    ports:
+      - "8092:8090"
+    networks:
+      - strata-net
+
+  fee-service-vn:
+    build:
+      context: ..
+      dockerfile: docker/fee-service.Dockerfile
+    container_name: fee-service-vn
+    environment:
+      COUNTRY: VN
+    ports:
+      - "8093:8090"
+    networks:
+      - strata-net
+
+  # ============================================================
+  # SMART ROUTING DEMO: Smart Router (Camel Content Router)
+  # ============================================================
+  router-service:
+    build:
+      context: ..
+      dockerfile: docker/router.Dockerfile
+    container_name: strata-router
+    environment:
+      FEE_SERVICE_US_URL: http://fee-service-us:8090
+      FEE_SERVICE_EU_URL: http://fee-service-eu:8090
+      FEE_SERVICE_VN_URL: http://fee-service-vn:8090
+    ports:
+      - "8082:8082"
+    depends_on:
+      - fee-service-us
+      - fee-service-eu
+      - fee-service-vn
+    networks:
+      - strata-net
+
+  # ============================================================
+  # UTILITY: Kafka UI
   # ============================================================
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
