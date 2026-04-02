@@ -4,7 +4,7 @@ import com.example.strata.shared.dto.CreateAccountCommand
 import com.example.strata.shared.dto.DepositMoneyCommand
 import com.example.strata.shared.dto.WithdrawMoneyCommand
 import com.example.strata.shared.events.*
-import java.math.BigDecimal
+import java.math.BigInteger
 import java.util.UUID
 
 class AccountAggregate {
@@ -12,7 +12,7 @@ class AccountAggregate {
         private set
     var name: String = ""
         private set
-    var balance: BigDecimal = BigDecimal.ZERO
+    var balance: BigInteger = BigInteger.ZERO
         private set
     var version: Long = 0
         private set
@@ -24,7 +24,7 @@ class AccountAggregate {
     fun create(command: CreateAccountCommand): List<DomainEvent> {
         require(!created) { "Account ${command.accountId} already exists" }
         require(command.accountName.isNotBlank()) { "Account name must not be blank" }
-        require(command.initialBalance >= BigDecimal.ZERO) { "Initial balance must not be negative" }
+        require(command.initialBalance >= BigInteger.ZERO) { "Initial balance must not be negative" }
 
         return listOf(
             AccountCreated(
@@ -37,7 +37,7 @@ class AccountAggregate {
 
     fun deposit(command: DepositMoneyCommand): List<DomainEvent> {
         require(created) { "Account ${command.accountId} does not exist" }
-        require(command.amount > BigDecimal.ZERO) { "Deposit amount must be positive" }
+        require(command.amount > BigInteger.ZERO) { "Deposit amount must be positive" }
 
         return listOf(
             MoneyDeposited(
@@ -50,7 +50,7 @@ class AccountAggregate {
 
     fun withdraw(command: WithdrawMoneyCommand): List<DomainEvent> {
         require(created) { "Account ${command.accountId} does not exist" }
-        require(command.amount > BigDecimal.ZERO) { "Withdrawal amount must be positive" }
+        require(command.amount > BigInteger.ZERO) { "Withdrawal amount must be positive" }
         require(balance >= command.amount) {
             "Insufficient funds: balance=$balance, withdrawal=${command.amount}"
         }

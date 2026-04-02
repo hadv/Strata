@@ -72,11 +72,11 @@ class AccountCommandController(
 }
 
 data class DepositRequest(
-    val amount: java.math.BigDecimal,
+    val amount: java.math.BigInteger,
     val description: String = ""
 )
 
 data class WithdrawRequest(
-    val amount: java.math.BigDecimal,
+    val amount: java.math.BigInteger,
     val description: String = ""
 )

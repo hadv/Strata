@@ -2,7 +2,7 @@ package com.example.strata.shared.events
 
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
-import java.math.BigDecimal
+import java.math.BigInteger
 import java.time.Instant
 import java.util.UUID
 
@@ -27,14 +27,14 @@ data class AccountCreated(
     override val aggregateId: UUID,
     override val occurredAt: Instant = Instant.now(),
     val accountName: String,
-    val initialBalance: BigDecimal
+    val initialBalance: BigInteger
 ) : DomainEvent
 
 data class MoneyDeposited(
     override val eventId: UUID = UUID.randomUUID(),
     override val aggregateId: UUID,
     override val occurredAt: Instant = Instant.now(),
-    val amount: BigDecimal,
+    val amount: BigInteger,
     val description: String = ""
 ) : DomainEvent
 
@@ -42,6 +42,6 @@ data class MoneyWithdrawn(
     override val eventId: UUID = UUID.randomUUID(),
     override val aggregateId: UUID,
     override val occurredAt: Instant = Instant.now(),
-    val amount: BigDecimal,
+    val amount: BigInteger,
     val description: String = ""
 ) : DomainEvent

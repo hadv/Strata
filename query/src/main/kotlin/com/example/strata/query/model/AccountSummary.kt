@@ -1,7 +1,7 @@
 package com.example.strata.query.model
 
 import jakarta.persistence.*
-import java.math.BigDecimal
+import java.math.BigInteger
 import java.time.Instant
 import java.util.UUID
 
@@ -15,8 +15,8 @@ class AccountSummary(
     @Column(name = "account_name", nullable = false)
     var accountName: String = "",
 
-    @Column(name = "balance", nullable = false, precision = 19, scale = 4)
-    var balance: BigDecimal = BigDecimal.ZERO,
+    @Column(name = "balance", nullable = false)
+    var balance: BigInteger = BigInteger.ZERO,
 
     @Column(name = "last_updated", nullable = false)
     var lastUpdated: Instant = Instant.now(),
