@@ -165,10 +165,8 @@ services:
   fee-service-us:
     build:
       context: ..
-      dockerfile: docker/fee-service.Dockerfile
+      dockerfile: docker/fee-service-us.Dockerfile
     container_name: fee-service-us
-    environment:
-      COUNTRY: US
     ports:
       - "8091:8090"
     networks:
@@ -177,10 +175,8 @@ services:
   fee-service-eu:
     build:
       context: ..
-      dockerfile: docker/fee-service.Dockerfile
+      dockerfile: docker/fee-service-eu.Dockerfile
     container_name: fee-service-eu
-    environment:
-      COUNTRY: EU
     ports:
       - "8092:8090"
     networks:
@@ -189,10 +185,8 @@ services:
   fee-service-vn:
     build:
       context: ..
-      dockerfile: docker/fee-service.Dockerfile
+      dockerfile: docker/fee-service-vn.Dockerfile
     container_name: fee-service-vn
-    environment:
-      COUNTRY: VN
     ports:
       - "8093:8090"
     networks:

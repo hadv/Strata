@@ -17,13 +17,10 @@ spec:
     spec:
       containers:
         - name: fee-service
-          image: strata-fee-service:latest
+          image: strata-fee-service-vn:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8090
-          env:
-            - name: COUNTRY
-              value: VN
           resources:
             limits:
               memory: "512Mi"

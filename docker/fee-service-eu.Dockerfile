@@ -6,15 +6,15 @@ COPY gradlew .
 COPY gradle gradle
 COPY build.gradle.kts settings.gradle.kts gradle.properties ./
 COPY shared shared
-COPY fee-service fee-service
+COPY fee-service-eu fee-service-eu
 
-RUN chmod +x gradlew && ./gradlew :fee-service:bootJar -x test --no-daemon
+RUN chmod +x gradlew && ./gradlew :fee-service-eu:bootJar -x test --no-daemon
 
 # ── Stage 2: Runtime ────────────────────────────────────────────────────
 FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
-COPY --from=builder /app/fee-service/build/libs/*.jar app.jar
+COPY --from=builder /app/fee-service-eu/build/libs/*.jar app.jar
 
 EXPOSE 8090
 

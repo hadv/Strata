@@ -174,7 +174,7 @@ You should see the console notification:
 The `router` module demonstrates the **Content-Based Router** Enterprise Integration Pattern (EIP). When a transaction is initiated, the router:
 1. Inspects the `country` field in the request.
 2. Routes the request to a country-specific fee calculation microservice.
-3. Each country microservice (US, EU, VN) runs as a separate deployment/pod.
+3. Each country microservice (US, EU, VN) runs as a separate deployment/pod and is built from its own independent Kotlin module (`fee-service-us`, `fee-service-eu`, `fee-service-vn`). This demonstrates a shared-nothing microservice architecture.
 4. Aggregates the fee and returns the total amount to the client.
 
 | Pattern | Implementation | Description |
