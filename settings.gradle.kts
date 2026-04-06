@@ -17,7 +17,6 @@ rootProject.name = "strata"
 include("shared")
 include("command")
 include("query")
-include("router")
 include("fee-service-us")
 include("fee-service-eu")
 include("fee-service-vn")

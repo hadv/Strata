@@ -193,27 +193,6 @@ services:
       - strata-net
 
   # ============================================================
-  # SMART ROUTING DEMO: Smart Router (Camel Content Router)
-  # ============================================================
-  router-service:
-    build:
-      context: ..
-      dockerfile: docker/router.Dockerfile
-    container_name: strata-router
-    environment:
-      FEE_SERVICE_US_URL: http://fee-service-us:8090
-      FEE_SERVICE_EU_URL: http://fee-service-eu:8090
-      FEE_SERVICE_VN_URL: http://fee-service-vn:8090
-    ports:
-      - "8082:8082"
-    depends_on:
-      - fee-service-us
-      - fee-service-eu
-      - fee-service-vn
-    networks:
-      - strata-net
-
-  # ============================================================
   # UTILITY: Kafka UI
   # ============================================================
   kafka-ui:
