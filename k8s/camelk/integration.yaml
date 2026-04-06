@@ -1,0 +1,38 @@
+# =============================================================================
+# Camel K Integration CRD — Transfer Fee Router
+# =============================================================================
+apiVersion: camel.apache.org/v1
+kind: Integration
+metadata:
+  name: strata-transfer-fee-router
+  namespace: strata
+spec:
+  sources:
+    - name: transfer-fee-router.yaml
+      language: yaml
+      content: |
+        - rest:
+            path: "/transfer"
+            post:
+              - path: "/calculate-fee"
+                to: "direct:calculate-fee"
+        - route:
+            id: transfer-fee-router
+            from:
+              uri: "direct:calculate-fee"
+              steps:
+                - log: "Calculating fee for amount ${body[amount]} in country ${body[country]}"
+                - set-property:
+                    name: amount
+                    simple: "${body[amount]}"
+                - set-header:
+                    name: country
+                    simple: "${body[country]}"
+                - to-d: "http://fee-service-${header.country.toLowerCase()}:8090/api/fees/calculate"
+                - script:
+                    language: "groovy"
+                    script: |
+                      def fee = body.fee as BigInteger
+                      def amount = exchange.getProperty("amount") as BigInteger
+                      body.totalCharged = amount + fee
+

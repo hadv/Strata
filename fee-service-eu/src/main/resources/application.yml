@@ -1,0 +1,7 @@
+server:
+  port: 8092
+
+logging:
+  level:
+    com.example.strata.fee: DEBUG
+    org.springframework.web: INFO
